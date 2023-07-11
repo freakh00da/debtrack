@@ -34,7 +34,16 @@ export default function FriendForm() {
     setScanError(false);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({video: true});
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((device) => device.kind === 'videoinput');
+
+      const constraints = {
+        video: {
+          deviceId: videoDevices.length > 1 ? {exact: videoDevices[1].deviceId} : undefined, // Menggunakan kamera belakang jika tersedia
+        },
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       videoRef.current.srcObject = stream;
 
       const qrScanner = new QrScanner(videoRef.current, (result) => {
