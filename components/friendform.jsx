@@ -7,6 +7,7 @@ import {database} from '../config/firebase';
 import {set, ref} from 'firebase/database';
 import {useAuth} from '../context/AuthContext';
 import {getCredential} from '../data/user';
+import QrScanner from 'qr-scanner';
 
 export default function FriendForm() {
   const [uid, setUid] = React.useState('');
@@ -23,6 +24,27 @@ export default function FriendForm() {
     } else if (name === 'message') {
       setMessage(value);
     }
+  };
+
+  const [scanner, setScanner] = React.useState(null);
+  const videoRef = React.useRef(null);
+
+  const openCamera = () => {
+    setShowCamera(true);
+    setScanError(false);
+
+    const qrScanner = new QrScanner(videoRef.current, (result) => {
+      if (result) {
+        setUid(result);
+      } else {
+        setScanError(true);
+      }
+      qrScanner.stop();
+      setShowCamera(false);
+    });
+
+    setScanner(qrScanner);
+    qrScanner.start();
   };
 
   React.useEffect(() => {
@@ -60,22 +82,13 @@ export default function FriendForm() {
     }
   };
 
-  const handleScan = (data) => {
-    if (data) {
-      setUid(data);
-      setShowCamera(false);
-    }
-  };
-
-  const handleError = (err) => {
-    console.error(err);
-    setScanError(true);
-  };
-
-  const openCamera = () => {
-    setShowCamera(true);
-    setScanError(false);
-  };
+  React.useEffect(() => {
+    return () => {
+      if (scanner) {
+        scanner.stop();
+      }
+    };
+  }, [scanner]);
 
   return (
     <Box
@@ -89,9 +102,12 @@ export default function FriendForm() {
     >
       <TextField onChange={handleInputChange} id="outlined-basic-email" label="uid" variant="outlined" name="uid" value={uid} />
       {showCamera ? (
-        <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>{scanError && <p>Error scanning QR code. Please try again.</p>}</Box>
+        <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+          <video ref={videoRef} style={{width: '100%', height: 'auto'}}></video>
+          {scanError && <p>Error scanning QR code. Please try again.</p>}
+        </Box>
       ) : (
-        <Button onClick={openCamera} variant="outlined" sx={{py: 2}}>
+        <Button variant="outlined" sx={{py: 2}} onClick={openCamera}>
           Open Camera
         </Button>
       )}

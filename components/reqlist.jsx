@@ -27,8 +27,8 @@ export default function ReqListTable() {
     try {
       const {uid} = reqData;
       if (uid) {
-        const mtoRef = ref(database, `${myUid}/dataMto/${uid}`);
-        const otmRef = ref(database, `${uid}/dataOtm/${myUid}`);
+        const mtoRef = ref(database, `${uid}/dataMto/${myUid}`);
+        const otmRef = ref(database, `${myUid}/dataOtm/${uid}`);
         await set(mtoRef, reqData);
         await set(otmRef, reqData);
         // Menghapus permintaan dari reqList setelah diterima

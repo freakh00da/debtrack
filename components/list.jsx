@@ -47,7 +47,7 @@ export default function ListOtm() {
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.id}>
-              <TableCell>{row.date}</TableCell>
+              <TableCell>{new Date(row.date).toDateString()}</TableCell>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.place}</TableCell>
               <TableCell>{row.detail}</TableCell>
