@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -10,11 +10,11 @@ import {getCredential} from '../data/user';
 import QrScanner from 'qr-scanner';
 
 export default function FriendForm() {
-  const [uid, setUid] = React.useState('');
-  const [message, setMessage] = React.useState('');
-  const [showCamera, setShowCamera] = React.useState(false);
-  const [scanError, setScanError] = React.useState(false);
-  const [credential, setCredential] = React.useState();
+  const [uid, setUid] = useState('');
+  const [message, setMessage] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+  const [scanError, setScanError] = useState(false);
+  const [credential, setCredential] = useState();
   const {user} = useAuth();
   const myUid = user.uid;
   const handleInputChange = (e) => {
@@ -26,34 +26,42 @@ export default function FriendForm() {
     }
   };
 
-  const [scanner, setScanner] = React.useState(null);
-  const videoRef = React.useRef(null);
+  const [scanner, setScanner] = useState(null);
+  const videoRef = useRef(null);
 
-  const openCamera = () => {
+  const openCamera = async () => {
     setShowCamera(true);
     setScanError(false);
 
-    const qrScanner = new QrScanner(videoRef.current, (result) => {
-      if (result) {
-        setUid(result);
-      } else {
-        setScanError(true);
-      }
-      qrScanner.stop();
-      setShowCamera(false);
-    });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({video: true});
+      videoRef.current.srcObject = stream;
 
-    setScanner(qrScanner);
-    qrScanner.start();
+      const qrScanner = new QrScanner(videoRef.current, (result) => {
+        if (result) {
+          setUid(result);
+        } else {
+          setScanError(true);
+        }
+        qrScanner.stop();
+        setShowCamera(false);
+      });
+
+      setScanner(qrScanner);
+      qrScanner.start();
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setShowCamera(false);
+    }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchCredential = async () => {
       try {
         const data = await getCredential(myUid);
         setCredential(data);
       } catch (error) {
-        console.error('terjadi kesalahan', error);
+        console.error('Terjadi kesalahan:', error);
         return null;
       }
     };
@@ -70,19 +78,17 @@ export default function FriendForm() {
         name: credential.name,
       };
 
-      await set(ref(database, `${uid}/friendreq/${myUid}`), requestData)
-        .then(() => {
-          // Success: data pushed to database
-          setUid('');
-          setMessage('');
-        })
-        .catch((error) => {
-          console.error('Error pushing data to database:', error);
-        });
+      try {
+        await set(ref(database, `${uid}/friendreq/${myUid}`), requestData);
+        setUid('');
+        setMessage('');
+      } catch (error) {
+        console.error('Error pushing data to database:', error);
+      }
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       if (scanner) {
         scanner.stop();
@@ -103,7 +109,7 @@ export default function FriendForm() {
       <TextField onChange={handleInputChange} id="outlined-basic-email" label="uid" variant="outlined" name="uid" value={uid} />
       {showCamera ? (
         <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-          <video ref={videoRef} style={{width: '100%', height: 'auto'}}></video>
+          <video ref={videoRef} style={{width: '100%', height: 'auto'}} autoPlay playsInline></video>
           {scanError && <p>Error scanning QR code. Please try again.</p>}
         </Box>
       ) : (
