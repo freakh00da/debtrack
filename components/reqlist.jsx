@@ -44,7 +44,15 @@ export default function ReqListTable() {
     }
   };
 
-  const handleReject = async () => {};
+  const handleReject = async (request) => {
+    try {
+      // Menghapus permintaan pertemanan yang ditolak
+      await remove(ref(database, `${myUid}/reqlist/${request.uid}`));
+      setReqList((prevReqList) => prevReqList.filter((item) => item.id !== reqData.id));
+    } catch (error) {
+      console.error('Terjadi kesalahan pada handleReject:', error);
+    }
+  };
 
   return (
     <Paper>
