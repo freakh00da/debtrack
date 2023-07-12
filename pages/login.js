@@ -8,12 +8,14 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import {createTheme, ThemeProvider} from '@mui/material/styles';
 import {useAuth} from '../context/AuthContext';
+import {get, ref, remove, set} from 'firebase/database';
+import {database} from '@/config/firebase';
 
 const defaultTheme = createTheme();
 
 const Login = () => {
   const router = useRouter();
-  const {login} = useAuth();
+  const {login, user} = useAuth();
 
   const [data, setData] = useState({
     email: '',
@@ -36,6 +38,19 @@ const Login = () => {
         // Log in user with email and password
         const {email, password} = data;
         await login(email, password);
+        const myUid = user.uid;
+        const snapshot = await get(ref(database, `precred/${myUid}`));
+        if (snapshot.exists()) {
+          const snapshotData = {
+            uid: snapshot.val().uid,
+            name: snapshot.val().name,
+            email: snapshot.val().email,
+          };
+          await set(ref(database, `${myUid}/credential`), snapshotData);
+          await remove(ref(database, `precred/${myUid}`));
+        } else {
+          console.error('error fetching credential stuff');
+        }
 
         // Redirect to home page or desired route
         router.push('/');

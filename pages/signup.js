@@ -61,7 +61,7 @@ const SignUp = () => {
             email: data.email,
             uid: user.uid,
           };
-          await set(ref(database, `${user.uid}/credential`), userData);
+          await set(ref(database, `precred/${user.uid}`), userData);
         }
 
         // Redirect to login page
